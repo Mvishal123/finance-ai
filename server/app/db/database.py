@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from .model import Base
+from app.db.model import Base
 
 
 load_dotenv()
@@ -20,6 +20,7 @@ def get_db():
         db.close()
 
 def create_database():
+    Base.metadata.drop_all(bind=engine)  # Drop existing tables
     Base.metadata.create_all(bind=engine)
 
 if __name__ == "__main__":
