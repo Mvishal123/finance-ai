@@ -4,6 +4,7 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
+import { formatCurrency } from "@/lib/currency";
 
 interface Transaction {
   id: string;
@@ -27,7 +28,10 @@ export default function DashboardPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [initialBalance, setInitialBalance] = useState<number | null>(null);
+  const [initialBalance, setInitialBalance] = useState(0);
+  const [currentBalance, setCurrentBalance] = useState(0);
+  const [totalIncome, setTotalIncome] = useState(0);
+  const [totalExpenses, setTotalExpenses] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -55,16 +59,21 @@ export default function DashboardPage() {
   }, [token]);
 
   // Calculate KPIs
-  const totalIncome = transactions
-    .filter(t => t.transaction_type === 'income')
-    .reduce((sum, t) => sum + t.amount, 0);
+  useEffect(() => {
+    const totalIncome = transactions
+      .filter(t => t.transaction_type === 'income')
+      .reduce((sum, t) => sum + t.amount, 0);
 
-  const totalExpenses = transactions
-    .filter(t => t.transaction_type === 'expense')
-    .reduce((sum, t) => sum + t.amount, 0);
+    const totalExpenses = transactions
+      .filter(t => t.transaction_type === 'expense')
+      .reduce((sum, t) => sum + t.amount, 0);
 
-  const currentBalance = (initialBalance || 0) + totalIncome - totalExpenses;
-  const savingsRate = totalIncome > 0 ? ((totalIncome - totalExpenses) / totalIncome) * 100 : 0;
+    const currentBalance = (initialBalance || 0) + totalIncome - totalExpenses;
+
+    setTotalIncome(totalIncome);
+    setTotalExpenses(totalExpenses);
+    setCurrentBalance(currentBalance);
+  }, [transactions, initialBalance]);
 
   // Calculate category totals for expenses
   const expensesByCategory: CategoryTotal[] = Object.values(
@@ -87,13 +96,13 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8 p-8">
       {/* KPI Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Current Balance</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${currentBalance.toFixed(2)}</div>
+            <div className="text-2xl font-bold">{formatCurrency(currentBalance)}</div>
             <Progress className="mt-2" value={Math.max(0, Math.min(100, (currentBalance / (initialBalance || 1)) * 100))} />
           </CardContent>
         </Card>
@@ -102,7 +111,7 @@ export default function DashboardPage() {
             <CardTitle className="text-sm font-medium">Total Income</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">${totalIncome.toFixed(2)}</div>
+            <div className="text-2xl font-bold text-green-600">{formatCurrency(totalIncome)}</div>
             <p className="text-xs text-muted-foreground">{transactions.filter(t => t.transaction_type === 'income').length} transactions</p>
           </CardContent>
         </Card>
@@ -111,17 +120,8 @@ export default function DashboardPage() {
             <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">${totalExpenses.toFixed(2)}</div>
+            <div className="text-2xl font-bold text-red-600">{formatCurrency(totalExpenses)}</div>
             <p className="text-xs text-muted-foreground">{transactions.filter(t => t.transaction_type === 'expense').length} transactions</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Savings Rate</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{savingsRate.toFixed(1)}%</div>
-            <Progress className="mt-2" value={savingsRate} />
           </CardContent>
         </Card>
       </div>
@@ -139,7 +139,7 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between mb-1">
                   <div className="space-y-0.5">
                     <p className="text-sm font-medium">{category}</p>
-                    <p className="text-xs text-muted-foreground">${total.toFixed(2)}</p>
+                    <p className="text-xs text-muted-foreground">{formatCurrency(total)}</p>
                   </div>
                   <p className="text-sm font-medium">{percentage.toFixed(1)}%</p>
                 </div>
@@ -166,7 +166,7 @@ export default function DashboardPage() {
                   <p className="text-xs text-muted-foreground">{transaction.description || 'No description'}</p>
                 </div>
                 <p className={`text-sm font-medium ${transaction.transaction_type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
-                  {transaction.transaction_type === 'income' ? '+' : '-'}${transaction.amount.toFixed(2)}
+                  {transaction.transaction_type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
                 </p>
               </div>
             ))}

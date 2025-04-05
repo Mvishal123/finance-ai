@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import axios from "axios";
+import { formatCurrency, formatAmountForInput, parseAmount } from "@/lib/currency";
 
 interface Category {
   id: string;
@@ -27,9 +28,16 @@ interface Transaction {
   category: Category;
 }
 
+interface FormData {
+  amount: number;
+  transaction_type: string;
+  category_id: string;
+  description: string;
+}
+
 export default function AddTransactionPage() {
-  const [formData, setFormData] = useState({
-    amount: "",
+  const [formData, setFormData] = useState<FormData>({
+    amount: 0,
     transaction_type: "expense",
     category_id: "",
     description: "",
@@ -38,6 +46,7 @@ export default function AddTransactionPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [showInitialBalanceForm, setShowInitialBalanceForm] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -76,12 +85,12 @@ export default function AddTransactionPage() {
       const token = localStorage.getItem("token");
       await axios.post(
         "http://localhost:8000/transactions/initial-balance",
-        { balance: parseFloat(formData.amount) },
+        { initial_balance: parseAmount(formData.amount) },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       setShowInitialBalanceForm(false);
-      setFormData(prev => ({ ...prev, amount: "" }));
+      handleChange("amount", 0);
     } catch (err: any) {
       setError(err.response?.data?.detail || "Failed to set initial balance");
     }
@@ -90,32 +99,34 @@ export default function AddTransactionPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setIsSubmitting(true);
 
     try {
+      const payload = {
+        ...formData,
+        amount: parseAmount(formData.amount.toString()),
+      };
+
       const token = localStorage.getItem("token");
       const response = await axios.post(
         "http://localhost:8000/transactions",
-        {
-          ...formData,
-          amount: parseFloat(formData.amount),
-        },
+        payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       // Add new transaction to list and reset form
       setTransactions(prev => [response.data, ...prev]);
-      setFormData(prev => ({
-        ...prev,
-        amount: "",
-        description: ""
-      }));
+      handleChange("amount", 0);
+      handleChange("description", "");
       setError("");
     } catch (err: any) {
       setError(err.response?.data?.detail || "Failed to add transaction");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const handleChange = (field: keyof typeof formData, value: string) => {
+  const handleChange = (field: keyof FormData, value: string | number) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
@@ -171,13 +182,11 @@ export default function AddTransactionPage() {
               <Label htmlFor="amount">Amount</Label>
               <Input
                 id="amount"
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="Enter amount"
-                value={formData.amount}
-                onChange={(e) => handleChange("amount", e.target.value)}
+                type="text"
+                value={formatAmountForInput(formData.amount)}
+                onChange={(e) => setFormData(prev => ({ ...prev, amount: parseAmount(e.target.value) }))}
                 required
+                disabled={isSubmitting}
               />
             </div>
 
@@ -226,7 +235,7 @@ export default function AddTransactionPage() {
               />
             </div>
 
-            <Button type="submit" className="w-full">
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
               Add Transaction
             </Button>
           </form>
@@ -248,13 +257,11 @@ export default function AddTransactionPage() {
                 >
                   <div className="flex justify-between items-center">
                     <div>
-                      <p className="font-medium">{transaction.category.name}</p>
-                      {transaction.description && (
-                        <p className="text-sm text-gray-600">{transaction.description}</p>
-                      )}
+                      <p className="text-sm font-medium">{transaction.category.name}</p>
+                      <p className="text-xs text-gray-500">{transaction.description || 'No description'}</p>
                     </div>
                     <p className={`font-bold ${transaction.transaction_type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
-                      {transaction.transaction_type === 'income' ? '+' : '-'}${transaction.amount.toFixed(2)}
+                      {transaction.transaction_type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
                     </p>
                   </div>
                 </div>

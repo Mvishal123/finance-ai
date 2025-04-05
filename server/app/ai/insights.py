@@ -66,11 +66,14 @@ def analyze_transactions(transactions: List[Transaction], initial_balance: float
             else:
                 monthly_data[month_key]["expenses"] += t.amount
 
-    # AI Prompts
-    income_prompt = f"""
-    As a financial advisor, analyze this data and provide insights:
-    - Total Income: ${total_income}
-    - Balance: ${current_balance}
+    # Format amounts in Indian Rupees
+    def format_inr(amount: float) -> str:
+        return f"₹{amount:,.2f}"
+
+    # Income Analysis Prompt
+    income_prompt = f"""As a financial advisor, analyze this data and provide insights:
+    - Total Income: {format_inr(total_income)}
+    - Balance: {format_inr(current_balance)}
     - Monthly Trends: {json.dumps(monthly_data, indent=2)}
     
     Provide a detailed analysis focusing on income patterns, growth opportunities, and specific actionable recommendations.
@@ -80,9 +83,9 @@ def analyze_transactions(transactions: List[Transaction], initial_balance: float
     Return only valid JSON. Do not include markdown, backticks, or explanation!!!
     """
 
-    expense_prompt = f"""
-    As a financial advisor, analyze these spending patterns:
-    - Total Expenses: ${total_expenses}
+    # Expense Analysis Prompt
+    expense_prompt = f"""As a financial advisor, analyze these spending patterns:
+    - Total Expenses: {format_inr(total_expenses)}
     - Expenses By Category: {json.dumps(expense_by_category, indent=2)}
     - Monthly Trends: {json.dumps(monthly_data, indent=2)}
     
@@ -93,11 +96,11 @@ def analyze_transactions(transactions: List[Transaction], initial_balance: float
     Return only valid JSON. Do not include markdown, backticks, or explanation!!!
     """
 
-    investment_prompt = f"""
-    As a financial advisor, suggest investment strategies based on:
-    - Current Balance: ${current_balance}
-    - Monthly Income: ${total_income}
-    - Monthly Expenses: ${total_expenses}
+    # Investment Strategy Prompt
+    investment_prompt = f"""As a financial advisor, suggest investment strategies based on:
+    - Current Balance: {format_inr(current_balance)}
+    - Monthly Income: {format_inr(total_income)}
+    - Monthly Expenses: {format_inr(total_expenses)}
     - Savings Rate: {((total_income - total_expenses) / total_income * 100) if total_income > 0 else 0}%
     
     Provide detailed investment strategy considering risk tolerance and market conditions.

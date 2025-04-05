@@ -5,6 +5,7 @@ import api from '@/lib/axios';
 import { Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { formatCurrency } from '@/lib/currency';
 
 interface Insights {
   income_insights: {
@@ -87,7 +88,7 @@ const InsightsPage = () => {
             {loading ? (
               <Loader2 className="h-6 w-6 animate-spin" />
             ) : (
-              <p className="text-2xl font-bold">${insights?.metrics?.current_balance?.toFixed(2) || '0.00'}</p>
+              <p className="text-2xl font-bold">{formatCurrency(insights?.metrics?.current_balance || 0)}</p>
             )}
           </CardContent>
         </Card>
@@ -99,7 +100,7 @@ const InsightsPage = () => {
             {loading ? (
               <Loader2 className="h-6 w-6 animate-spin" />
             ) : (
-              <p className="text-2xl font-bold text-green-600">${insights?.metrics?.total_income?.toFixed(2) || '0.00'}</p>
+              <p className="text-2xl font-bold text-green-600">{formatCurrency(insights?.metrics?.total_income || 0)}</p>
             )}
           </CardContent>
         </Card>
@@ -111,7 +112,7 @@ const InsightsPage = () => {
             {loading ? (
               <Loader2 className="h-6 w-6 animate-spin" />
             ) : (
-              <p className="text-2xl font-bold text-red-600">${insights?.metrics?.total_expenses?.toFixed(2) || '0.00'}</p>
+              <p className="text-2xl font-bold text-red-600">{formatCurrency(insights?.metrics?.total_expenses || 0)}</p>
             )}
           </CardContent>
         </Card>
