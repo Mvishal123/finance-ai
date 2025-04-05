@@ -7,6 +7,9 @@ from app.db.model import Base
 
 load_dotenv()
 
+print("Loading environment variables...")
+print(os.getenv("DATABASE_URL"))
+
 DATABASE_URL = os.getenv("DATABASE_URL")
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

@@ -6,6 +6,8 @@ from app.routers.transactions import router as TransactionRouter
 
 app = FastAPI()
 
+print("Starting FastAPI application...")
+
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
@@ -15,14 +17,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+print("Registering routers...")
 # Include routers
-app.include_router(AuthRouter)
+app.include_router(AuthRouter, )
 app.include_router(TransactionRouter)
-
-@app.get("/protected")
-def protected_route(user: str = Depends(get_current_user)):
-    return {"message": f"Hello {user}, you are authenticated!"}
+print("Routers registered")
 
 @app.get("/")
 def read_root():
+    print("Root endpoint hit")
     return {"message": "Welcome to FinAI API"}

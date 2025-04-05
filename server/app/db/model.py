@@ -1,6 +1,7 @@
 import enum
-from sqlalchemy import UUID, Column, String, Float, ForeignKey, Enum, func
-from sqlalchemy.orm import relationship, Session
+from datetime import datetime
+from sqlalchemy import UUID, Column, String, Float, ForeignKey, Enum, DateTime
+from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 from uuid import uuid4
 
@@ -39,3 +40,4 @@ class Transaction(Base):
     category_id = Column(UUID(as_uuid=True), ForeignKey("categories.id"), nullable=False)
     category = relationship("Category", back_populates="transactions")
     description = Column(String)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)

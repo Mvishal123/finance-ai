@@ -3,6 +3,7 @@
 __pycache__/
 alembic.ini
 /alembic/*
+/server/venv
 
 # Logs
 logs
